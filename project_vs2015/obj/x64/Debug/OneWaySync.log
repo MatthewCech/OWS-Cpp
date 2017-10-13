@@ -1,0 +1,20 @@
+﻿  main.cpp
+..\Source\main.cpp(139): error C2220: warning treated as error - no 'object' file generated
+..\Source\main.cpp(139): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+..\Source\main.cpp(182): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+..\Source\main.cpp(207): warning C4267: 'argument': conversion from 'size_t' to 'unsigned int', possible loss of data
+  WinsockManager.cpp
+  UDPSocket.cpp
+..\Source\Net\UDPSocket.cpp(22): error C2220: warning treated as error - no 'object' file generated
+..\Source\Net\UDPSocket.cpp(22): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+..\Source\Net\UDPSocket.cpp(39): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+..\Source\Net\UDPSocket.cpp(57): warning C4267: 'initializing': conversion from 'size_t' to 'socklen_t', possible loss of data
+  TCPSocket.cpp
+..\Source\Net\TCPSocket.cpp(28): error C2220: warning treated as error - no 'object' file generated
+..\Source\Net\TCPSocket.cpp(28): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+..\Source\Net\TCPSocket.cpp(44): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+..\Source\Net\TCPSocket.cpp(76): warning C4267: 'initializing': conversion from 'size_t' to 'socklen_t', possible loss of data
+  SocketUtil.cpp
+  SocketAddressFactory.cpp
+  SocketAddress.cpp
+  Generating Code...

@@ -1,0 +1,20 @@
+﻿  SocketAddress.cpp
+  SocketAddressFactory.cpp
+..\Source\Net\SocketAddressFactory.cpp(30): error C2065: 'DEBUG': undeclared identifier
+..\Source\Net\SocketAddressFactory.cpp(38): error C2065: 'DEBUG': undeclared identifier
+  SocketUtil.cpp
+  TCPSocket.cpp
+  UDPSocket.cpp
+  WinsockManager.cpp
+  main.cpp
+..\Source\main.cpp(56): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(57): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(144): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(150): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(160): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(187): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(231): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(283): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(308): error C2065: 'DEBUG': undeclared identifier
+..\Source\main.cpp(316): error C2065: 'DEBUG': undeclared identifier
+  Generating Code...

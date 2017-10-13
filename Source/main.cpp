@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <filesystem>
 #include "Testing.hpp"
 #include "Net/SocketUtil.hpp"
@@ -12,30 +13,39 @@
 // Defines, etc.
 #define BUFFER_SIZE 1400 // Defines the maxiumum buffer size we're going to be using.
 #define PORT 8004
-
+#define STANDARD_REFRESH_RATE_MS 125
 // Namespace inclusion
 namespace fs = std::experimental::filesystem;
 
 // Globally passing things around because we can. Use a mutex.
-std::string passable_message = "";
-std::mutex passable_message_mutex;
+std::string passableMessage = "";
+std::mutex passableMessageMutex;
+std::atomic<bool> canPollDirectory = false;
 
 void SharedMessage(std::string message)
 {
   // Lock the global message queue
-  std::lock_guard<std::mutex> lock(passable_message_mutex);
-  passable_message = message;
+  std::lock_guard<std::mutex> lock(passableMessageMutex);
+  passableMessage = message;
 }
 std::string SharedMessage()
 {
-  std::lock_guard<std::mutex> lock(passable_message_mutex);
-  return std::string(passable_message.c_str());
+  std::lock_guard<std::mutex> lock(passableMessageMutex);
+  return std::string(passableMessage.c_str());
 }
 void SharedMessageClear()
 {
-  std::lock_guard<std::mutex> lock(passable_message_mutex);
-  passable_message.clear();
+  std::lock_guard<std::mutex> lock(passableMessageMutex);
+  passableMessage.clear();
 }
+
+char pattern[] { '_','~','^', '\'','^','~','_' };
+char GetLoadingPattern(int index)
+{
+  index = index % sizeof(pattern) / sizeof(char);
+  return pattern[index];
+}
+
 // Runs the client, taking a pointer to the address of the server. This is formatted as IP:Port.
 void RunClient(const char* executableLocation, const char * serverAddress)
 {
@@ -50,12 +60,15 @@ void RunClient(const char* executableLocation, const char * serverAddress)
 	// Start second thread for file scanning
 	std::thread helperThread([path]() {
     std::vector<fs::directory_entry> entries;
+    
+    // Wait to proceed.
+    while (!canPollDirectory)
+      std::this_thread::sleep_for(std::chrono::milliseconds(STANDARD_REFRESH_RATE_MS));
+
+    // Run forever.
+    size_t loops = 0;
 		while (true)
 		{
-			// Establish current directory of executable
-			printf("Re-polling directory... \n");
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
 			// Directory entry reference
       std::vector<std::string> additions;            // Keeps track of any file additions.
       std::vector<bool> tags(entries.size(), false); // Keeps track of any file removals.
@@ -84,7 +97,7 @@ void RunClient(const char* executableLocation, const char * serverAddress)
       // Handle any additions
       if (additions.size() > 0)
       {
-        msg_builder += "Detected file additions: \n";
+        msg_builder += "Detected file addition(s): \n";
         for (std::string &s : additions)
           msg_builder += "  " + s + "\n";
       }
@@ -97,7 +110,7 @@ void RunClient(const char* executableLocation, const char * serverAddress)
         {
           if (!removal_title_displayed)
           {
-            msg_builder += "Detected file additions: \n";
+            msg_builder += "Detected file deletion(s): \n";
             removal_title_displayed = true;
           }
 
@@ -112,7 +125,20 @@ void RunClient(const char* executableLocation, const char * serverAddress)
       // send constructed message
       if(msg_builder.size() > 0)
         SharedMessage(msg_builder);
-		}
+
+      // Log sent message locally
+      if (msg_builder.size() != 0)
+      {
+        if (loops > 0)
+          printf("\n");
+        printf("%s", msg_builder.c_str());
+      }
+
+      // Loop upkeep
+      std::this_thread::sleep_for(std::chrono::milliseconds(STANDARD_REFRESH_RATE_MS));
+      printf("\rRe-polling directory...%c", GetLoadingPattern(loops));
+      ++loops;
+		} // END WHILE(TRUE)
 	});
 
   DEBUG_PRINT("Starting TCP client...");
@@ -130,11 +156,41 @@ void RunClient(const char* executableLocation, const char * serverAddress)
   // only have a few connecting at a time then you're probably fine to do it anyways.
   tcpSocket->SetNonBlockingMode(true);
 
-  // Wait for that connection tho.
-  while (tcpSocket->Connect(*addr) < 0) {};
+  // Wait for an initial connection - we will be sent a message when we get something.
+  DEBUG_PRINT("Waiting to connect to " + IPAddr + "...");
+  char data[BUFFER_SIZE + 1]{ 0 };
+  size_t loops = 0;
+  while (tcpSocket->Connect(*addr) < 0) {} 
+  while (true)
+  {
+    // Attempt connection
+    tcpSocket->Connect(*addr);
+    std::this_thread::sleep_for(std::chrono::milliseconds(STANDARD_REFRESH_RATE_MS * 2));
+
+    // Recieve and process any data from the server here!
+    unsigned int bytesRecieved{ static_cast<unsigned int>(tcpSocket->Recieve(data, BUFFER_SIZE)) };
+    if (bytesRecieved > 1)
+    {
+      std::string toPrint{ data, bytesRecieved };
+      if (loops > 0)
+        std::cout << "\n";
+      std::cout << "[Server]: " << toPrint << '\n';
+      break;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(STANDARD_REFRESH_RATE_MS * 2));
+    std::cout << "\r[!]: Retrying connection to " << IPAddr << "..." << GetLoadingPattern(loops);
+    ++loops;
+  }
+
+
+  // We can go!
+  DEBUG_PRINT("Connection Established!");
+  canPollDirectory = true;
 
   // Are we running this loop?
-  bool isRunning{ true };
+  bool isRunning = true;
+  bool hasServer = false;
 
   // Primary Loop.
   while (isRunning)
@@ -164,7 +220,7 @@ void RunClient(const char* executableLocation, const char * serverAddress)
     // the time between loops in a game running at 60fps.
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
-  //helperThread.join();
+  helperThread.join();
 
 }
 
@@ -226,7 +282,7 @@ void RunServer()
           // take note of their valiant effort and give them a nice pat on the back before
           // they try to do anything else.
           DEBUG_PRINT("New connection from: " << newClientAddr);
-          tcpptr->Send("Connected to server!", 10);
+          tcpptr->Send("Connection Established - Welcome!", 34);
           
           // Oh, and we should add it to the list of sockets we can now listen to.
           readableBlockingSockets.push_back(tcpptr);

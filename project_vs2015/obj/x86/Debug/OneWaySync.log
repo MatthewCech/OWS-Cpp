@@ -1,3 +1,10 @@
 ﻿  main.cpp
-  OneWaySync.vcxproj -> Z:\Chat-Cpp - Copy\project_vs2015\..\bin_x86_Debug_vs2015\onewaysync.exe
+  WinsockManager.cpp
+  UDPSocket.cpp
+  TCPSocket.cpp
+  SocketUtil.cpp
+  SocketAddressFactory.cpp
+  SocketAddress.cpp
+  Generating Code...
+  OneWaySync.vcxproj -> Z:\OnewaySync-Cpp\project_vs2015\..\bin_x86_Debug_vs2015\onewaysync.exe
   OneWaySync.vcxproj -> ..\bin_x86_Debug_vs2015\onewaysync.pdb (Partial PDB)
