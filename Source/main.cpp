@@ -225,116 +225,18 @@ void RunClient(const char* executableLocation, const char * serverAddress)
 }
 
 
-// Starts the server. The server doesn't need an IP supplied to it, rather it is whatever you put it on. 
-// NOTE THAT I USE PORT 27015 - THE CLIENT WILL HAVE TO SPECIFY THIS!
-void RunServer()
-{
-  DEBUG_PRINT("Starting TCP server...");
-
-  // Two vectors - one for checking new connections that are blocking,
-  // and the other for being populated with sockets that have things 
-  // which need to be read from.
-  std::vector<TCPSocketPtr> readableBlockingSockets;
-  std::vector<TCPSocketPtr> readableSockets;
-
-  // Create our socket, using IPV4
-  TCPSocketPtr listenSocket{ SocketUtil::CreateTCPSocket(SocketUtil::IPv4) };
-
-  // Establish we want to listen to any address. We have specified port 27015 for
-  // this, although as long as the port is over 10000 you should be fine. This port
-  // will have to be specified by the client tho.
-  SocketAddress recieveAddr{ INADDR_ANY, 8004 };
-
-  // Init and bind to the recieving address we have. 
-  if (listenSocket->Bind(recieveAddr) != AG_NO_ERROR)
-    return;
-
-  // Start listening. This is essential, we have to tell the port to actually listen
-  // for incoming connections.
-  listenSocket->Listen();
-
-  // Now that we are bound, unblocked and listenting, push back to readable.
-  readableBlockingSockets.push_back(listenSocket);
-
-  // Are we running this loop?
-  bool isRunning{ true };
-
-  // Primary server loop
-  while (isRunning)
-  {
-    // If select tells us that we have some sockets that need attention, lets loop through them.
-    // We are using select to parse through our custom vector of blocking sockets and then having
-    // it populate another vector with sockets that can be read from as necessary.
-    if (SocketUtil::Select(&readableBlockingSockets, &readableSockets, NULL, NULL, NULL, NULL))
-      for (const TCPSocketPtr &socket : readableSockets)
-      {
-        if (socket == listenSocket)
-        {
-          // In here, we handle a new connection.
-          // The socket address here can be used to find the IP of the person connecting,
-          // and should probably be saved off to keep track of it if you want it later.
-          // The client can be replied to using the specific TCPSocketPtr here,
-          // with tcpptr.
-          SocketAddress newClientAddr;
-          TCPSocketPtr tcpptr{ listenSocket->Accept(newClientAddr) };
-
-          // We don't want to just leave our client in the cold, so it's probably a good idea to
-          // take note of their valiant effort and give them a nice pat on the back before
-          // they try to do anything else.
-          DEBUG_PRINT("New connection from: " << newClientAddr);
-          tcpptr->Send("Connection Established - Welcome!", 34);
-          
-          // Oh, and we should add it to the list of sockets we can now listen to.
-          readableBlockingSockets.push_back(tcpptr);
-        }
-        else
-        {
-          // This is for sockets that have an existing connection associated with them.
-          // The socketaddress is not present here, so if any information it holds needs
-          // to be accessed, it's best to have a structure linking the sockaddr from earlier
-          // to this. The + 1 is optional, but prevents mistakes since we all know i have trouble
-          // counting sometimes.
-          char segment[BUFFER_SIZE + 1]{ 0 };
-          int dataRecieved = socket->Recieve(segment, BUFFER_SIZE);
-
-          // If we recieved a single null byte, we have lost connection.
-          if (dataRecieved == 1 && segment[0] == '\0')
-          {
-            // Look through our list of readable sockets and remove the unfortunately now EX socket. (haha like a parrot or whatever)
-            for (unsigned int j = 0; j < readableBlockingSockets.size(); ++j)
-              if (readableBlockingSockets[j] == socket)
-              {
-                // Socket can now be removed.
-                readableBlockingSockets.erase(readableBlockingSockets.begin() + j);
-                DEBUG_PRINT("Client Disconnected!");
-                break;
-              }
-          }
-
-          // Realistically we can do whatever with the data here, but we only have to do something with it
-          // if we actually recieved anything.
-          else if (dataRecieved > 0)
-            DEBUG_PRINT("Recieved Bytes: " << std::string(segment, dataRecieved));
-        }
-      }
-  }
-}
 
 
 // Application Entry point
 int main(int argc, char const *argv[])
 {
-  if (argc < 2 || argc > 3)
+  if (argc != 2)
   {
-    std::cout << "Incorrect arguments! Please pass 1 for server or 2 for client! <application name> <1 | 2> <if 2, server IP>\n";
-    std::cout << "For client, please specify the server address. There is no port number needed!";
-    return -1;
+    std::cout << "Incorrect arguments! Please include the target stat collection server. Note: All stat collection servers are assumed to run on port " + PORT;
+    return 0;
   }
 
-  if (argv[1][0] == '1')
-    RunServer();
-  else if(argv[1][0] == '2')
-    RunClient(argv[0], argv[2]);
+  RunClient(argv[0], argv[1]);
 
   return 0;
 }
