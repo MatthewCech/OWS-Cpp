@@ -2,12 +2,14 @@
 #include <mutex>
 #include <atomic>
 
-// Defines, etc.
+// Client-related Defines 
 #define BUFFER_SIZE 1400 // Defines the maxiumum buffer size we're going to be using.
 #define PORT 8004
 #define STANDARD_REFRESH_RATE_MS 125
 
-// Globally passing things around because we can. Use a mutex.
+
+
+// Client-realted global values
 struct ClientGlobals
 {
   static std::string passableMessage;
@@ -16,10 +18,14 @@ struct ClientGlobals
 };
 
   ////////////////////////////////
- // Global Function Prototypes //
+ // Global function prototypes //
 ////////////////////////////////
 void RunClient(const char*, const char *);
-void SharedMessage(std::string message);
+
+   ///////////////////////////////////////
+ // Global helper function prototypes //
+///////////////////////////////////////
+void SharedMessage(std::string);
 std::string SharedMessage();
 void SharedMessageClear();
-char GetLoadingPattern(int index);
+char GetLoadingPattern(int);

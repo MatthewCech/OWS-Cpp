@@ -45,7 +45,7 @@ void RunClient(const char* executableLocation, const char * serverAddress)
       std::vector<std::string> additions;            // Keeps track of any file additions.
       std::vector<bool> tags(entries.size(), false); // Keeps track of any file removals.
 
-                                                     // Iterate through directory
+      // Iterate through directory
       for (auto &directry_entry : fs::directory_iterator(path))
       {
         bool add_to_vec = true;
@@ -150,6 +150,7 @@ void RunClient(const char* executableLocation, const char * serverAddress)
       break;
     }
 
+    // Sleep and retry
     std::this_thread::sleep_for(std::chrono::milliseconds(STANDARD_REFRESH_RATE_MS * 2));
     std::cout << "\r[!]: Retrying connection to " << IPAddr << "..." << GetLoadingPattern(loops);
     ++loops;
@@ -192,10 +193,16 @@ void RunClient(const char* executableLocation, const char * serverAddress)
     // the time between loops in a game running at 60fps.
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
-  helperThread.join();
 
+  helperThread.join();
 }
 
+
+
+  ///////////////////////////////////////////
+ // Global helper function implementation //
+///////////////////////////////////////////
+// Safeuly setsd the global shared message so threads can communicate.
 void SharedMessage(std::string message)
 {
   // Lock the global message queue
@@ -203,18 +210,21 @@ void SharedMessage(std::string message)
   ClientGlobals::passableMessage = message;
 }
 
+// Safely returns a copy of the global message to be sent between threads
 std::string SharedMessage()
 {
   std::lock_guard<std::mutex> lock(ClientGlobals::passableMessageMutex);
   return std::string(ClientGlobals::passableMessage.c_str());
 }
 
+// Safely clears out the message to be passed between threads
 void SharedMessageClear()
 {
   std::lock_guard<std::mutex> lock(ClientGlobals::passableMessageMutex);
   ClientGlobals::passableMessage.clear();
 }
 
+// Returns a character indicating a wrapped index into ASCII loading character set
 char GetLoadingPattern(int index)
 {
   const char pattern[]{ '_','~','^', '\'','^','~','_' };
