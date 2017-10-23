@@ -59,6 +59,7 @@
 ////////////////////////
 // Formatting Defines
 #define UNUSED(x) (void)(x)
+
 #ifdef DEBUG
   #define DEBUG_APP true
 #else
