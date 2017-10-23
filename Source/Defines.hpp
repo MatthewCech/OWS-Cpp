@@ -59,8 +59,14 @@
 ////////////////////////
 // Formatting Defines
 #define UNUSED(x) (void)(x)
-#define DEBUG_PRINT(x) do{if(DEBUG){ std::cout << x << '\n'; }} while(0)
-#define DEBUG_PRINT_VAR(x) do{if(DEBUG){ std::cout << #x << ": " << x << '\n'; }} while(0)
+#ifdef DEBUG
+  #define DEBUG_APP true
+#else
+  #define DEBUG_APP false
+#endif
+
+#define DEBUG_PRINT(x) do{if(DEBUG_APP){ std::cout << x << '\n'; }} while(0)
+#define DEBUG_PRINT_VAR(x) do{if(DEBUG_APP){ std::cout << #x << ": " << x << '\n'; }} while(0)
 #define AG_NO_ERROR 0
 
 // Server Defines
