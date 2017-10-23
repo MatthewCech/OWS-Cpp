@@ -8,7 +8,7 @@ int main(int argc, char const *argv[])
 {
   if (argc != 2)
   {
-    std::cout << "Incorrect arguments! Please include the target stat collection server. Note: All stat collection servers are assumed to run on port " + PORT;
+    std::cout << "Incorrect number of arguments! Please include the target stat collection server. Note: All stat collection servers are assumed to run on port " << PORT << '\n';
     return 0;
   }
 
