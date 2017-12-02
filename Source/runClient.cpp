@@ -7,8 +7,12 @@
 #include "Testing.hpp"
 #include "Net/SocketUtil.hpp"
 #include "Net/SocketAddressFactory.hpp"
+#include <fstream>
 
-
+const std::string CONTENT_DELIMITER = ":";
+const std::string FILE_ADDED    = "FA" + CONTENT_DELIMITER;
+const std::string FILE_MODIFIED = "FM" + CONTENT_DELIMITER;
+const std::string FILE_DELETED  = "FD" + CONTENT_DELIMITER;
 
 // Define statics
 std::string ClientGlobals::passableMessage = "";
@@ -64,14 +68,21 @@ void RunClient(const char* executableLocation, const char * serverAddress)
         }
       }
 
-      std::string msg_builder = "";
+      std::string std_cout_msg_builder = "";
 
       // Handle any additions
       if (additions.size() > 0)
       {
-        msg_builder += "Detected file addition(s): \n";
+        // Construct local log
+        std_cout_msg_builder += "Detected file addition(s): \n";
         for (std::string &s : additions)
-          msg_builder += "  " + s + "\n";
+          std_cout_msg_builder += "  " + s + "\n";
+
+        // Construct network message
+        for (std::string &s : additions)
+        {
+          //FILE_ADDED + s + CONTENT_DELIMITER + 
+        }
       }
 
       // Handle any deletions
@@ -82,11 +93,11 @@ void RunClient(const char* executableLocation, const char * serverAddress)
         {
           if (!removal_title_displayed)
           {
-            msg_builder += "Detected file deletion(s): \n";
+            std_cout_msg_builder += "Detected file deletion(s): \n";
             removal_title_displayed = true;
           }
 
-          msg_builder += "  " + entries[i].path().filename().generic_string() + "\n";
+          std_cout_msg_builder += "  " + entries[i].path().filename().generic_string() + "\n";
           entries.erase(entries.begin() + i);
           tags.erase(tags.begin() + i);
         }
@@ -95,16 +106,17 @@ void RunClient(const char* executableLocation, const char * serverAddress)
       }
 
       // send constructed message
-      if (msg_builder.size() > 0)
-        SharedMessage(msg_builder);
+      if (std_cout_msg_builder.size() > 0)
+        std::cout << std_cout_msg_builder << '\n';
 
       // Log sent message locally
-      if (msg_builder.size() != 0)
+      if (std_cout_msg_builder.size() != 0)
       {
         if (loops > 0)
           printf("\n");
-        printf("%s", msg_builder.c_str());
+        printf("%s", std_cout_msg_builder.c_str());
       }
+
 
       // Loop upkeep
       std::this_thread::sleep_for(std::chrono::milliseconds(STANDARD_REFRESH_RATE_MS));
@@ -230,4 +242,11 @@ char GetLoadingPattern(int index)
   const char pattern[]{ '_','~','^', '\'','^','~','_' };
   index = index % sizeof(pattern) / sizeof(char);
   return pattern[index];
+}
+
+// Gets the size of the specified file.
+std::ifstream::pos_type GetFilesize(const char* filename)
+{
+  std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+  return in.tellg();
 }

@@ -13,6 +13,7 @@
 struct ClientGlobals
 {
   static std::string passableMessage;
+  static std::mutex passableMessageMutex
   static std::mutex passableMessageMutex;
   static std::atomic<bool> canPollDirectory;
 };
